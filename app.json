@@ -1,0 +1,18 @@
+{
+  "name": "krunker-clone",
+  "description": "A Krunker.io clone with cross-platform support and mobile gyroscope controls",
+  "repository": "https://https://github.com/Akshat1256/krunker-clone",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "keywords": ["game", "fps", "multiplayer", "browser", "mobile", "threejs"],
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment setting for the application",
+      "value": "production"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+} 

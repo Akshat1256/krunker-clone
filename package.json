@@ -1,0 +1,42 @@
+{
+  "name": "krunker-clone",
+  "version": "1.0.0",
+  "description": "A Krunker.io clone with cross-platform support and mobile gyroscope controls",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "webpack --mode production",
+    "dev-build": "webpack --mode development --watch",
+    "ip": "node get-ip.js",
+    "postinstall": "npm run build"
+  },
+  "keywords": [
+    "game",
+    "fps",
+    "multiplayer",
+    "browser",
+    "mobile",
+    "threejs"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "cannon-es": "^0.20.0",
+    "dat.gui": "^0.7.9",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.8.1",
+    "stats.js": "^0.17.0",
+    "three": "^0.157.0"
+  },
+  "devDependencies": {
+    "css-loader": "^6.8.1",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.5.3",
+    "nodemon": "^3.0.1",
+    "style-loader": "^3.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

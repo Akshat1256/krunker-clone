@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Krunker Clone - FPS Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a1a;
+            color: white;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Screen Management */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+        }
+
+        /* Main Menu Screen */
+        #mainMenu {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .menu-container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            min-width: 400px;
+            border: 2px solid #333;
+        }
+
+        .game-title {
+            font-size: 48px;
+            color: #fff;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            font-weight: bold;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .menu-button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .menu-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(45deg, #5a6fd8, #6a4190);
+        }
+
+        .team-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .team-section h3 {
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .team-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .team-info p {
+            color: #fff;
+            margin: 0;
+        }
+
+        .small-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .team-members h4 {
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .team-members ul {
+            color: #fff;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .team-members li {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Loading Screen */
+        #loadingScreen {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* HUD Elements */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .hud-element {
+            position: absolute;
+            pointer-events: auto;
+        }
+
+        #healthBar {
+            bottom: 20px;
+            left: 20px;
+            width: 200px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #healthFill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444, #ffaa44);
+            transition: width 0.3s ease;
+        }
+
+        #ammoCounter {
+            bottom: 20px;
+            right: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        #autofireStatus {
+            bottom: 50px;
+            right: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        #scoreBoard {
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        #performanceStats {
+            top: 20px;
+            left: 80px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #00ff00;
+        }
+
+        #crosshair {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        #scopeOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.8) 70%);
+            pointer-events: none;
+            display: none;
+            z-index: 150;
+        }
+
+        #scopeReticle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            border: 2px solid #FF0000;
+            border-radius: 50%;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        #scopeReticle::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 4px;
+            background: #FF0000;
+            border-radius: 50%;
+        }
+
+        #settingsButton {
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #settingsButton:hover {
+            background: rgba(0, 0, 0, 0.9);
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+
+        /* Mobile Controls */
+        #mobileControls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 150px;
+            display: none;
+            z-index: 200;
+        }
+
+        .control-stick {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            touch-action: none;
+        }
+
+        .control-stick::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+        }
+
+        #leftStick {
+            bottom: 20px;
+            left: 20px;
+        }
+
+        #rightStick {
+            bottom: 20px;
+            right: 20px;
+        }
+
+        #shootButton {
+            position: absolute;
+            bottom: 20px;
+            right: 120px;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            touch-action: none;
+        }
+
+        #reloadButton {
+            position: absolute;
+            bottom: 20px;
+            right: 200px;
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 255, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            touch-action: none;
+        }
+
+        /* Settings Panel */
+        #settingsPanel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #333;
+            display: none;
+            z-index: 300;
+            min-width: 350px;
+            max-height: 80vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #settingsPanel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #settingsPanel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        #settingsPanel::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        #settingsPanel::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .settings-group {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .settings-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .settings-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: #222;
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .settings-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: #222;
+            color: white;
+        }
+
+        .settings-section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .settings-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .settings-section h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background: #5a6fd8;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #mobileControls {
+                display: block;
+            }
+
+            #healthBar {
+                width: 150px;
+                height: 15px;
+            }
+
+            #ammoCounter {
+                font-size: 18px;
+            }
+
+            #scoreBoard {
+                font-size: 12px;
+            }
+        }
+
+        /* Show mobile controls for testing on all devices */
+        #mobileControls {
+            display: block !important;
+        }
+
+        /* HUD Layout Customization */
+        .hud-draggable {
+            cursor: move;
+            user-select: none;
+        }
+
+        .hud-resizable {
+            resize: both;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Main Menu Screen -->
+        <div id="mainMenu" class="screen">
+            <div class="menu-container">
+                <h1 class="game-title">KRUNKER CLONE</h1>
+                
+                <div class="menu-buttons">
+                    <button id="playButton" class="menu-button">PLAY DEATHMATCH</button>
+                    <button id="createTeamButton" class="menu-button">CREATE TEAM</button>
+                    <button id="joinTeamButton" class="menu-button">JOIN TEAM</button>
+                    <button id="settingsMenuButton" class="menu-button">SETTINGS</button>
+                </div>
+                
+                <div style="margin-top: 20px; color: #ccc; font-size: 14px;">
+                    <h4>Controls:</h4>
+                    <p>• WASD - Move | Mouse - Look | Left Click - Shoot</p>
+                    <p>• Hold Left Click - Autofire | V - Toggle Autofire Mode | R - Reload</p>
+                    <p>• Right Click - Scope Aim | Space - Jump | Shift - Crouch</p>
+                    <p>• Target boards show damage when hit!</p>
+                </div>
+                
+                <div class="team-section" id="teamSection" style="display: none;">
+                    <h3>Team Management</h3>
+                    <div class="team-info">
+                        <p>Team Code: <span id="teamCode">-</span></p>
+                        <button id="copyTeamCode" class="small-button">Copy Code</button>
+                    </div>
+                    <div class="team-members">
+                        <h4>Team Members:</h4>
+                        <ul id="teamMembersList"></ul>
+                    </div>
+                    <button id="startTeamDeathmatch" class="menu-button" style="display: none; margin-top: 15px;">
+                        START TEAM DEATHMATCH
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="screen" style="display: none;">
+            <div class="loading-spinner"></div>
+            <h2>Loading Krunker Clone...</h2>
+            <p>Connecting to server...</p>
+        </div>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div id="healthBar" class="hud-element hud-draggable">
+                <div id="healthFill"></div>
+            </div>
+            
+            <div id="ammoCounter" class="hud-element hud-draggable">
+                30/30
+            </div>
+            
+            <div id="autofireStatus" class="hud-element hud-draggable">
+                Autofire: OFF
+            </div>
+
+            <div id="scoreBoard" class="hud-element hud-draggable">
+                <div>Score: <span id="score">0</span></div>
+                <div>Kills: <span id="kills">0</span></div>
+                <div>Deaths: <span id="deaths">0</span></div>
+            </div>
+            
+            <div id="performanceStats" class="hud-element hud-draggable">
+                <div>FPS: <span id="fps">0</span></div>
+                <div>Latency: <span id="latency">0</span>ms</div>
+            </div>
+            
+            <div id="settingsButton" class="hud-element hud-draggable">
+                ⚙️
+            </div>
+            
+            <div id="crosshair" class="hud-element"></div>
+            
+            <div id="scopeOverlay">
+                <div id="scopeReticle"></div>
+            </div>
+        </div>
+
+        <!-- Mobile Controls -->
+        <div id="mobileControls">
+            <div id="leftStick" class="control-stick"></div>
+            <div id="rightStick" class="control-stick"></div>
+            <div id="shootButton">FIRE</div>
+            <div id="reloadButton">RELOAD</div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settingsPanel">
+            <h3>Game Settings</h3>
+            
+            <div class="settings-section">
+                <h4>Mouse Sensitivity</h4>
+                <div class="settings-group">
+                    <label for="sensitivity">Overall Sensitivity:</label>
+                    <input type="range" id="sensitivity" min="0.1" max="5" step="0.1" value="1">
+                    <span id="sensitivityValue">1.0</span>
+                </div>
+
+                <div class="settings-group">
+                    <label for="sensitivityX">X-Axis Sensitivity:</label>
+                    <input type="range" id="sensitivityX" min="0.1" max="5" step="0.1" value="1">
+                    <span id="sensitivityXValue">1.0</span>
+                </div>
+
+                <div class="settings-group">
+                    <label for="sensitivityY">Y-Axis Sensitivity:</label>
+                    <input type="range" id="sensitivityY" min="0.1" max="5" step="0.1" value="1">
+                    <span id="sensitivityYValue">1.0</span>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Mobile Controls</h4>
+                <div class="settings-group">
+                    <label for="mobileSensitivity">Touch Sensitivity:</label>
+                    <input type="range" id="mobileSensitivity" min="0.1" max="3" step="0.1" value="1">
+                    <span id="mobileSensitivityValue">1.0</span>
+                </div>
+
+                <div class="settings-group">
+                    <label for="mobileSensitivityX">Touch X-Axis Sensitivity:</label>
+                    <input type="range" id="mobileSensitivityX" min="0.1" max="3" step="0.1" value="1">
+                    <span id="mobileSensitivityXValue">1.0</span>
+                </div>
+
+                <div class="settings-group">
+                    <label for="mobileSensitivityY">Touch Y-Axis Sensitivity:</label>
+                    <input type="range" id="mobileSensitivityY" min="0.1" max="3" step="0.1" value="1">
+                    <span id="mobileSensitivityYValue">1.0</span>
+                </div>
+
+                <div class="settings-group">
+                    <label for="gyroSensitivity">Gyroscope Sensitivity:</label>
+                    <input type="range" id="gyroSensitivity" min="0.1" max="3" step="0.1" value="1">
+                    <span id="gyroSensitivityValue">1.0</span>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Display & Controls</h4>
+                <div class="settings-group">
+                    <label for="fov">Field of View:</label>
+                    <input type="range" id="fov" min="60" max="120" step="5" value="75">
+                    <span id="fovValue">75°</span>
+                </div>
+
+                <div class="settings-group">
+                    <label for="hudLayout">HUD Layout:</label>
+                    <select id="hudLayout">
+                        <option value="default">Default</option>
+                        <option value="minimal">Minimal</option>
+                        <option value="pro">Professional</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>Options</h4>
+                <div class="settings-group">
+                    <label>
+                        <input type="checkbox" id="gyroEnabled"> Enable Gyroscope (Mobile)
+                    </label>
+                </div>
+
+                <div class="settings-group">
+                    <label>
+                        <input type="checkbox" id="vibrationEnabled"> Enable Vibration (Mobile)
+                    </label>
+                </div>
+
+                <div class="settings-group">
+                    <label>
+                        <input type="checkbox" id="invertX"> Invert X-Axis
+                    </label>
+                </div>
+
+                <div class="settings-group">
+                    <label>
+                        <input type="checkbox" id="invertY"> Invert Y-Axis
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <button class="button" id="saveSettings">Save Settings</button>
+                <button class="button" id="resetHUD">Reset HUD Layout</button>
+                <button class="button" id="closeSettings">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+</body>
+</html> 
