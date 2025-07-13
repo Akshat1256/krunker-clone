@@ -508,16 +508,19 @@ class KrunkerClone {
         const rightStick = document.getElementById('rightStick');
         const shootButton = document.getElementById('shootButton');
         const reloadButton = document.getElementById('reloadButton');
+        const scopeButton = document.getElementById('scopeButton');
 
-        // Left stick (movement)
+        // Left stick (movement) - Fixed axis inversion
         this.setupTouchStick(leftStick, (x, y) => {
+            // For movement, we want direct mapping (no inversion)
             this.controls.leftStick.x = x;
             this.controls.leftStick.y = y;
         });
 
-        // Right stick (look)
+        // Right stick (look) - Fixed axis inversion
         this.setupTouchStick(rightStick, (x, y) => {
-            this.controls.rightStick.x = x;
+            // For camera look, invert X-axis for natural camera movement
+            this.controls.rightStick.x = -x; // Invert X-axis
             this.controls.rightStick.y = y;
         });
 
@@ -540,6 +543,12 @@ class KrunkerClone {
         reloadButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
             this.startReload();
+        });
+
+        // Scope button - tap to toggle
+        scopeButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.toggleScope();
         });
     }
 
@@ -592,8 +601,8 @@ class KrunkerClone {
             // Update visual indicator with smoother movement
             stickIndicator.style.transform = `translate(calc(-50% + ${x * 25}px), calc(-50% + ${y * 25}px))`;
 
-            // Invert Y axis for proper control
-            callback(x, -y);
+            // No Y-axis inversion - use direct mapping
+            callback(x, y);
         });
 
         element.addEventListener('touchend', (e) => {
@@ -633,16 +642,14 @@ class KrunkerClone {
             // Update visual indicator with smoother movement
             stickIndicator.style.transform = `translate(calc(-50% + ${x * 25}px), calc(-50% + ${y * 25}px))`;
 
-            // Invert Y axis for proper control
-            callback(x, -y);
+            // No Y-axis inversion - use direct mapping
+            callback(x, y);
         });
 
         document.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                stickIndicator.style.transform = 'translate(-50%, -50%)';
-                callback(0, 0);
-            }
+            isDragging = false;
+            stickIndicator.style.transform = 'translate(-50%, -50%)';
+            callback(0, 0);
         });
     }
 
@@ -1152,6 +1159,14 @@ class KrunkerClone {
             nameDiv.id = `playerNameLabel_${playerData.id}`;
             document.body.appendChild(nameDiv);
         }
+        
+        // Add name label
+        // this.addPlayerNameLabel(playerData.id, playerData.name); // Removed - method doesn't exist
+        
+        // Update scoreboard when new player is added
+        this.updateScoreboard();
+        
+        console.log(`Added player: ${playerData.name} (${playerData.id})`);
     }
 
     updatePlayerPosition(data) {
@@ -1185,13 +1200,25 @@ class KrunkerClone {
     removePlayer(playerId) {
         const player = this.players.get(playerId);
         if (player) {
-            this.scene.remove(player.mesh);
+            // Remove player mesh from scene
+            if (player.mesh && this.scene) {
+                this.scene.remove(player.mesh);
+            }
+            
+            // Remove name label
+            const nameLabel = document.getElementById(`playerNameLabel_${playerId}`);
+            if (nameLabel) {
+                nameLabel.remove();
+            }
+            
+            // Remove from players map
             this.players.delete(playerId);
+            
+            // Update scoreboard when player is removed
+            this.updateScoreboard();
+            
+            console.log(`Removed player: ${playerId}`);
         }
-
-        // Remove name label
-        const label = document.getElementById(`playerNameLabel_${playerId}`);
-        if (label) label.remove();
     }
 
     addProjectile(projectileData) {
@@ -1369,6 +1396,9 @@ class KrunkerClone {
                 this.addDamageDisplay(targetPlayer.mesh.position, data.damage);
             }
         }
+        
+        // Update scoreboard when scores change
+        this.updateScoreboard();
     }
 
     updateHUD() {
@@ -1851,30 +1881,30 @@ class KrunkerClone {
             
             // Only clear and update if we're actually in playing mode
             if (this.gameMode === 'playing') {
-        // Clear existing players and projectiles
+                // Clear existing players and projectiles
                 this.players.forEach(player => {
                     if (player.mesh && this.scene) {
                         this.scene.remove(player.mesh);
                     }
                 });
-        this.players.clear();
+                this.players.clear();
                 
                 this.projectiles.forEach(projectile => {
                     if (projectile.mesh && this.scene) {
                         this.scene.remove(projectile.mesh);
                     }
                 });
-        this.projectiles.clear();
+                this.projectiles.clear();
 
-        // Add all players
+                // Add all players
                 if (data.players) {
-        data.players.forEach(player => this.addPlayer(player));
+                    data.players.forEach(player => this.addPlayer(player));
                 }
         
-        // Add all projectiles
+                // Add all projectiles
                 if (data.projectiles) {
-        data.projectiles.forEach(projectile => this.addProjectile(projectile));
-    }
+                    data.projectiles.forEach(projectile => this.addProjectile(projectile));
+                }
 
                 // Set player position based on team assignment
                 const player = data.players ? data.players.find(p => p.id === this.socket.id) : null;
@@ -1883,6 +1913,9 @@ class KrunkerClone {
                     this.camera.rotation.set(player.rotation.x, player.rotation.y, player.rotation.z);
                     console.log('Camera position set to:', player.position);
                 }
+                
+                // Update scoreboard with new player data
+                this.updateScoreboard();
             }
         } catch (error) {
             console.error('Error in handleGameState:', error);
@@ -1940,7 +1973,7 @@ class KrunkerClone {
         // Mobile movement (camera-relative)
         if (this.isMobile) {
             const mobileInputX = this.controls.leftStick.x;
-            const mobileInputZ = -this.controls.leftStick.y;
+            const mobileInputZ = -this.controls.leftStick.y; // Invert Y for forward/backward movement
             
             // Create a direction vector based on mobile input
             const mobileDirection = new THREE.Vector3(mobileInputX, 0, mobileInputZ);
@@ -2075,8 +2108,8 @@ class KrunkerClone {
             this.cameraSmoothing.targetRotationY += this.mouse.deltaX * xMultiplier;
             this.cameraSmoothing.targetRotationX += this.mouse.deltaY * yMultiplier;
             
-            // Clamp vertical rotation (pitch)
-            this.cameraSmoothing.targetRotationX = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, this.cameraSmoothing.targetRotationX));
+            // Clamp vertical rotation (pitch) - FPS-style limits
+            this.cameraSmoothing.targetRotationX = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, this.cameraSmoothing.targetRotationX));
             
             // Smooth interpolation between current and target rotation
             const smoothingFactor = this.cameraSmoothing.smoothingFactor;
@@ -2100,12 +2133,12 @@ class KrunkerClone {
             // Increased sensitivity for mobile with smoothing
             const sensitivityMultiplier = 0.25; // Increased from 0.15
             
-            // Update target rotation for mobile
+            // Update target rotation for mobile (corrected axis handling)
             this.cameraSmoothing.targetRotationY += this.controls.rightStick.x * sensitivityMultiplier * this.settings.mobileSensitivityX * xMultiplier;
             this.cameraSmoothing.targetRotationX += this.controls.rightStick.y * sensitivityMultiplier * this.settings.mobileSensitivityY * yMultiplier;
             
-            // Clamp vertical rotation
-            this.cameraSmoothing.targetRotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.cameraSmoothing.targetRotationX));
+            // Clamp vertical rotation (pitch) - FPS-style limits for mobile
+            this.cameraSmoothing.targetRotationX = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, this.cameraSmoothing.targetRotationX));
             
             // Smooth interpolation for mobile
             const mobileSmoothingFactor = 0.2; // Slightly more responsive on mobile
@@ -2127,8 +2160,8 @@ class KrunkerClone {
             this.cameraSmoothing.targetRotationY += this.gyroData.gamma * gyroSensitivity * xMultiplier;
             this.cameraSmoothing.targetRotationX += this.gyroData.beta * gyroSensitivity * yMultiplier;
             
-            // Clamp vertical rotation
-            this.cameraSmoothing.targetRotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.cameraSmoothing.targetRotationX));
+            // Clamp vertical rotation (pitch) - FPS-style limits for gyro
+            this.cameraSmoothing.targetRotationX = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, this.cameraSmoothing.targetRotationX));
             
             // Smooth interpolation for gyro
             const gyroSmoothingFactor = 0.1; // Very smooth for gyro
@@ -2325,6 +2358,98 @@ class KrunkerClone {
         if (playerNameElement && this.playerName) {
             playerNameElement.innerHTML = `<span>${this.playerName}</span>`;
         }
+    }
+
+    toggleScope() {
+        // Toggle scope state
+        this.scope.isAiming = !this.scope.isAiming;
+        
+        // Update camera FOV
+        if (this.scope.isAiming) {
+            this.camera.fov = this.scope.originalFOV / this.scope.zoomLevel;
+            // Show scope overlay
+            const scopeOverlay = document.getElementById('scopeOverlay');
+            if (scopeOverlay) scopeOverlay.style.display = 'block';
+        } else {
+            this.camera.fov = this.scope.originalFOV;
+            // Hide scope overlay
+            const scopeOverlay = document.getElementById('scopeOverlay');
+            if (scopeOverlay) scopeOverlay.style.display = 'none';
+        }
+        
+        // Update camera projection matrix
+        this.camera.updateProjectionMatrix();
+        
+        // Update scope button visual state
+        const scopeButton = document.getElementById('scopeButton');
+        if (scopeButton) {
+            if (this.scope.isAiming) {
+                scopeButton.classList.add('active');
+                scopeButton.textContent = 'SCOPE ON';
+            } else {
+                scopeButton.classList.remove('active');
+                scopeButton.textContent = 'SCOPE';
+            }
+        }
+        
+        // Add haptic feedback if available
+        if (this.settings.vibrationEnabled && navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+    }
+
+    updateScoreboard() {
+        const scoreboardElement = document.getElementById('scoreboard');
+        if (!scoreboardElement) return;
+
+        // Get all players and their scores (filter out bots)
+        const players = [];
+        this.players.forEach((player, playerId) => {
+            if (player.data && player.data.name) {
+                // Filter out bots - check if name contains "Bot" or if it's a bot player
+                const playerName = player.data.name;
+                const isBot = playerName.toLowerCase().includes('bot') || 
+                             playerName.toLowerCase().includes('ai') ||
+                             playerId.includes('bot') ||
+                             player.data.isBot === true;
+                
+                if (!isBot) {
+                    players.push({
+                        id: playerId,
+                        name: player.data.name,
+                        score: player.data.score || 0,
+                        kills: player.data.kills || 0,
+                        deaths: player.data.deaths || 0
+                    });
+                }
+            }
+        });
+
+        // Sort players by score (highest first)
+        players.sort((a, b) => b.score - a.score);
+
+        // Build scoreboard HTML
+        let scoreboardHTML = '<h3>Scoreboard</h3>';
+        
+        if (players.length === 0) {
+            scoreboardHTML += '<div class="scoreboard-entry"><span style="color: #ccc;">No players yet</span></div>';
+        } else {
+            players.forEach((player, index) => {
+                const rank = index + 1;
+                const isCurrentPlayer = player.id === this.socket.id;
+                const playerClass = isCurrentPlayer ? 'scoreboard-entry current-player' : 'scoreboard-entry';
+                
+                scoreboardHTML += `
+                    <div class="${playerClass}">
+                        <span class="player-rank">#${rank}</span>
+                        <span class="player-name">${player.name}</span>
+                        <span class="player-score">${player.score}</span>
+                    </div>
+                `;
+            });
+        }
+
+        scoreboardElement.innerHTML = scoreboardHTML;
     }
 }
 
