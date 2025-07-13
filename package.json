@@ -8,8 +8,7 @@
     "dev": "nodemon server.js",
     "build": "webpack --mode production",
     "dev-build": "webpack --mode development --watch",
-    "ip": "node get-ip.js",
-    "postinstall": "npm run build"
+    "ip": "node get-ip.js"
   },
   "keywords": [
     "game",
