@@ -319,8 +319,8 @@ io.on('connection', (socket) => {
                      Math.abs(resolvedPosition.z - bot.position.z) > 0.01;
         
         if (moved) {
-          // Map boundary collision detection (500x500 map, boundaries at ±250)
-          const mapBoundary = 250;
+        // Map boundary collision detection (500x500 map, boundaries at ±250)
+        const mapBoundary = 250;
           bot.position.x = Math.max(-mapBoundary, Math.min(mapBoundary, resolvedPosition.x));
           bot.position.z = Math.max(-mapBoundary, Math.min(mapBoundary, resolvedPosition.z));
         } else {

@@ -22,6 +22,7 @@ Railway offers a generous free tier with 500 hours/month and automatic deploymen
 ## ✅ What Railway Provides (FREE)
 
 - **500 hours/month** (enough for 24/7 hosting)
+- **100GB bandwidth/month** (generous for multiplayer)
 - **Automatic deployments** from GitHub
 - **Custom domains** support
 - **SSL certificates** included

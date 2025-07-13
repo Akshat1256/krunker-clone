@@ -1,28 +1,34 @@
 # Free Hosting Comparison for Krunker Clone
 
-Choose the best free hosting option for your multiplayer game!
+Choose the best free hosting option for your multiplayer game with generous bandwidth - NO CREDIT CARD REQUIRED!
 
 ## 🏆 Top Recommendations
 
 ### 1. Railway (BEST CHOICE) ⭐⭐⭐⭐⭐
-- **Free Hours:** 500/month (enough for 24/7)
+- **Free:** 500 hours/month (enough for 24/7)
+- **Bandwidth:** 100GB/month (generous)
 - **WebSocket Support:** ✅ Full support
 - **Multiplayer:** ✅ Perfect for real-time games
 - **Setup:** 2 minutes (GitHub integration)
+- **Credit Card:** ❌ NOT REQUIRED
 - **URL:** `https://your-app.up.railway.app`
 
 ### 2. Render (EXCELLENT) ⭐⭐⭐⭐⭐
-- **Free Hours:** 750/month (more than enough)
+- **Free:** 750 hours/month (more than enough)
+- **Bandwidth:** 100GB/month (generous)
 - **WebSocket Support:** ✅ Full support
 - **Multiplayer:** ✅ Perfect for real-time games
 - **Setup:** 3 minutes (GitHub integration)
+- **Credit Card:** ❌ NOT REQUIRED
 - **URL:** `https://your-app.onrender.com`
 
 ### 3. Vercel (LIMITED) ⭐⭐⭐
-- **Free Hours:** Unlimited
+- **Free:** Unlimited hours
+- **Bandwidth:** 100GB/month
 - **WebSocket Support:** ❌ Limited
 - **Multiplayer:** ⚠️ May not work properly
 - **Setup:** 2 minutes (GitHub integration)
+- **Credit Card:** ❌ NOT REQUIRED
 - **URL:** `https://your-app.vercel.app`
 
 ## 📊 Detailed Comparison
@@ -30,6 +36,7 @@ Choose the best free hosting option for your multiplayer game!
 | Feature | Railway | Render | Vercel | Heroku |
 |---------|---------|--------|--------|--------|
 | **Free Hours** | 500/month | 750/month | Unlimited | ❌ None |
+| **Bandwidth** | 100GB/month | 100GB/month | 100GB/month | ❌ None |
 | **WebSocket Support** | ✅ Full | ✅ Full | ❌ Limited | ✅ Full |
 | **Multiplayer Games** | ✅ Perfect | ✅ Perfect | ⚠️ Limited | ✅ Perfect |
 | **Auto-Deploy** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
@@ -40,14 +47,14 @@ Choose the best free hosting option for your multiplayer game!
 
 ## 🚀 Quick Start Guides
 
-### Railway (Recommended)
+### Railway (Recommended - No Credit Card)
 1. Go to [railway.app](https://railway.app)
 2. Sign up with GitHub
 3. Click "New Project" → "Deploy from GitHub repo"
 4. Select your repository
 5. Done! Get your URL in 2 minutes
 
-### Render (Alternative)
+### Render (Alternative - No Credit Card)
 1. Go to [render.com](https://render.com)
 2. Sign up with GitHub
 3. Click "New" → "Web Service"
@@ -58,8 +65,12 @@ Choose the best free hosting option for your multiplayer game!
 
 ## 💡 Why Railway/Render for Multiplayer?
 
+**Bandwidth:**
+- Railway/Render: 100GB/month (generous for gaming)
+- Perfect for multiplayer games with lots of players
+
 **WebSocket Support:**
-- Railway and Render provide full WebSocket support
+- Both provide full WebSocket support
 - Perfect for real-time multiplayer games
 - No limitations on persistent connections
 
@@ -72,6 +83,10 @@ Choose the best free hosting option for your multiplayer game!
 - 500-750 hours/month is enough for 24/7 hosting
 - Automatic deployments from GitHub
 - Built-in monitoring and logs
+
+**No Credit Card Required:**
+- Both platforms offer free tiers without any payment verification
+- Perfect for students and developers without credit cards
 
 ## 🎮 After Deployment
 
@@ -97,21 +112,22 @@ If you start with Vercel and need better multiplayer:
 
 ## 💰 Cost Comparison
 
-| Platform | Free Plan | Paid Plans | Best Value |
-|----------|-----------|------------|------------|
-| Railway  | 500h/month | $5/month | ⭐⭐⭐⭐⭐ |
-| Render   | 750h/month | $7/month | ⭐⭐⭐⭐⭐ |
-| Vercel   | Unlimited | $20/month | ⭐⭐⭐ |
-| Heroku   | ❌ None | $7/month | ⭐⭐ |
+| Platform | Free Plan | Bandwidth | Credit Card | Paid Plans | Best Value |
+|----------|-----------|-----------|-------------|------------|------------|
+| Railway  | 500h/month | 100GB/month | ❌ No | $5/month | ⭐⭐⭐⭐⭐ |
+| Render   | 750h/month | 100GB/month | ❌ No | $7/month | ⭐⭐⭐⭐⭐ |
+| Vercel   | Unlimited | 100GB/month | ❌ No | $20/month | ⭐⭐⭐ |
+| Heroku   | ❌ None | ❌ None | ❌ No | $7/month | ⭐⭐ |
 
 ## 🎯 Final Recommendation
 
-**For your Krunker clone multiplayer game:**
+**For your Krunker clone multiplayer game (NO CREDIT CARD):**
 
-1. **Start with Railway** - easiest setup, perfect for multiplayer
-2. **Use Render as backup** - more free hours if needed
+1. **Start with Railway** - 100GB/month bandwidth, easy setup, no credit card
+2. **Use Render as backup** - 100GB/month bandwidth, more free hours, no credit card
 3. **Avoid Vercel** - WebSocket limitations affect multiplayer
 4. **Skip Heroku** - no free tier anymore
+5. **Skip Fly.io** - requires credit card verification
 
 ## 🚀 Ready to Deploy?
 

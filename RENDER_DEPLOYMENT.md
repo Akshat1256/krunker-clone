@@ -29,6 +29,7 @@ Render offers 750 free hours/month - perfect for hosting your Krunker clone!
 ## ✅ What Render Provides (FREE)
 
 - **750 hours/month** (more than enough for 24/7)
+- **100GB bandwidth/month** (generous for multiplayer)
 - **Automatic deployments** from GitHub
 - **Custom domains** support
 - **SSL certificates** included
