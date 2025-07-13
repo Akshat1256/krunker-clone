@@ -370,39 +370,29 @@
         }
 
         #shootButton {
-            position: absolute;
-            bottom: 40px; /* Moved up from 20px to 40px */
-            right: 140px; /* Adjusted position */
-            width: 140px; /* Increased from 80px to 140px (1.75x bigger) */
-            height: 140px; /* Increased from 80px to 140px (1.75x bigger) */
-            background: rgba(255, 0, 0, 0.7);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 42px; /* Increased from 24px to 42px (1.75x bigger) */
-            font-weight: bold;
-            color: white;
-            touch-action: none;
+            /* 30% of previous: width: 140px; height: 140px; font-size: 42px; */
+            width: 42px;
+            height: 42px;
+            font-size: 13px;
         }
 
         #reloadButton {
-            position: absolute;
-            bottom: 40px; /* Moved up from 20px to 40px */
-            right: 240px; /* Adjusted position */
-            width: 140px; /* Increased from 80px to 140px (1.75x bigger) */
-            height: 140px; /* Increased from 80px to 140px (1.75x bigger) */
-            background: rgba(0, 255, 0, 0.7);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 35px; /* Increased from 20px to 35px (1.75x bigger) */
-            font-weight: bold;
-            color: white;
-            touch-action: none;
+            /* 30% of previous: width: 140px; height: 140px; font-size: 35px; */
+            width: 42px;
+            height: 42px;
+            font-size: 11px;
+        }
+
+        #rightStick {
+            /* 30% of previous: width: 175px; height: 175px; */
+            width: 52px;
+            height: 52px;
+        }
+
+        .right-bottom-controls {
+            gap: 10px; /* Reduce gap for smaller buttons */
+            bottom: 20px; /* Move closer to the bottom for smaller size */
+            right: 10px; /* Move closer to the right for smaller size */
         }
 
         /* Settings Panel */

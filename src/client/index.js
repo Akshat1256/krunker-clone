@@ -18,14 +18,26 @@ class KrunkerClone {
         // Detect if user is on laptop (for trackpad optimization)
         this.isLaptop = /Windows|Mac|Linux/.test(navigator.platform) && !this.isMobile;
         this.gyroData = { alpha: 0, beta: 0, gamma: 0 };
+        
+        // Camera smoothing system for FPS-style movement
+        this.cameraSmoothing = {
+            targetRotationX: 0,
+            targetRotationY: 0,
+            currentRotationX: 0,
+            currentRotationY: 0,
+            smoothingFactor: 0.15, // Lower = smoother, higher = more responsive
+            acceleration: 1.2, // Mouse acceleration multiplier
+            maxSpeed: 0.1 // Maximum rotation speed per frame
+        };
+        
         this.settings = {
-            sensitivity: 3.0, // Increased from 2.0 to 3.0 for very responsive movement
-            sensitivityX: 2.5, // Increased from 1.5 to 2.5 for very fast horizontal movement
-            sensitivityY: 2.0, // Increased from 1.2 to 2.0 for very fast vertical movement
-            mobileSensitivity: 1.0,
-            mobileSensitivityX: 1.0,
-            mobileSensitivityY: 1.0,
-            gyroSensitivity: 1.0,
+            sensitivity: 4.0, // Increased for more responsive movement
+            sensitivityX: 3.5, // Increased for faster horizontal movement
+            sensitivityY: 3.0, // Increased for faster vertical movement
+            mobileSensitivity: 1.5, // Increased mobile sensitivity
+            mobileSensitivityX: 1.5,
+            mobileSensitivityY: 1.5,
+            gyroSensitivity: 1.5, // Increased gyro sensitivity
             invertX: false,
             invertY: false,
             fov: 75,
@@ -361,16 +373,27 @@ class KrunkerClone {
         document.addEventListener('keyup', (e) => {
             this.keys[e.code] = false;
         });
-        // Mouse controls (PC only, no smoothing, direct mapping)
+        
+        // Mouse controls with improved sensitivity and smoothing
         document.addEventListener('mousemove', (e) => {
             if (!this.isMobile && document.pointerLockElement === this.renderer.domElement) {
-                this.mouse.deltaX = e.movementX * this.settings.sensitivityX * 0.001;
-                this.mouse.deltaY = e.movementY * this.settings.sensitivityY * 0.001;
+                // Apply mouse acceleration and smoothing
+                const acceleration = this.cameraSmoothing.acceleration;
+                const baseSensitivity = 0.002; // Base sensitivity multiplier
+                
+                // Calculate mouse movement with acceleration
+                const mouseSpeed = Math.sqrt(e.movementX * e.movementX + e.movementY * e.movementY);
+                const accelerationMultiplier = Math.min(1 + (mouseSpeed * 0.01), acceleration);
+                
+                this.mouse.deltaX = e.movementX * this.settings.sensitivityX * baseSensitivity * accelerationMultiplier;
+                this.mouse.deltaY = e.movementY * this.settings.sensitivityY * baseSensitivity * accelerationMultiplier;
             }
         });
+        
         document.addEventListener('click', () => {
             if (!this.isMobile) this.renderer.domElement.requestPointerLock();
         });
+        
         document.addEventListener('mousedown', (e) => {
             if (e.button === 0) { this.autofire.isShooting = true; this.shoot(); }
             else if (e.button === 2) { this.scope.isAiming = true; this.camera.fov = this.scope.originalFOV / this.scope.zoomLevel; this.camera.updateProjectionMatrix(); const scopeOverlay = document.getElementById('scopeOverlay'); if (scopeOverlay) scopeOverlay.style.display = 'block'; }
@@ -1815,6 +1838,13 @@ class KrunkerClone {
                 if (this.camera) {
                     this.camera.position.set(0, 2, 0);
                     this.camera.rotation.set(0, 0, 0);
+                    
+                    // Initialize camera smoothing system
+                    this.cameraSmoothing.targetRotationX = 0;
+                    this.cameraSmoothing.targetRotationY = 0;
+                    this.cameraSmoothing.currentRotationX = 0;
+                    this.cameraSmoothing.currentRotationY = 0;
+                    
                     console.log('Initial camera position set for game start');
                 }
             }
@@ -2036,38 +2066,78 @@ class KrunkerClone {
     }
 
     updateCameraRotation() {
-        // PC: Direct mouse look, no smoothing, clamp pitch
+        // PC: Smooth mouse look with acceleration and interpolation
         if (!this.isMobile) {
             const xMultiplier = this.settings.invertX ? 1 : -1;
-            const yMultiplier = this.settings.invertY ? 1 : -1; // Fixed Y-axis inversion
-            this.camera.rotation.y += this.mouse.deltaX * xMultiplier;
-            let targetX = this.camera.rotation.x + this.mouse.deltaY * yMultiplier;
-            this.camera.rotation.x = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, targetX));
+            const yMultiplier = this.settings.invertY ? 1 : -1;
+            
+            // Update target rotation with mouse input
+            this.cameraSmoothing.targetRotationY += this.mouse.deltaX * xMultiplier;
+            this.cameraSmoothing.targetRotationX += this.mouse.deltaY * yMultiplier;
+            
+            // Clamp vertical rotation (pitch)
+            this.cameraSmoothing.targetRotationX = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, this.cameraSmoothing.targetRotationX));
+            
+            // Smooth interpolation between current and target rotation
+            const smoothingFactor = this.cameraSmoothing.smoothingFactor;
+            this.cameraSmoothing.currentRotationX += (this.cameraSmoothing.targetRotationX - this.cameraSmoothing.currentRotationX) * smoothingFactor;
+            this.cameraSmoothing.currentRotationY += (this.cameraSmoothing.targetRotationY - this.cameraSmoothing.currentRotationY) * smoothingFactor;
+            
+            // Apply smoothed rotation to camera
+            this.camera.rotation.x = this.cameraSmoothing.currentRotationX;
+            this.camera.rotation.y = this.cameraSmoothing.currentRotationY;
             
             // Reset mouse delta after applying it
             this.mouse.deltaX = 0;
             this.mouse.deltaY = 0;
         }
-        // Mobile look (improved sensitivity and responsiveness)
+        
+        // Mobile look with improved responsiveness
         if (this.isMobile) {
             const xMultiplier = this.settings.invertX ? -1 : 1;
-            const yMultiplier = this.settings.invertY ? -1 : 1; // Fixed Y-axis inversion
+            const yMultiplier = this.settings.invertY ? -1 : 1;
             
-            // Increased sensitivity multiplier from 0.05 to 0.15 for better responsiveness
-            const sensitivityMultiplier = 0.15;
+            // Increased sensitivity for mobile with smoothing
+            const sensitivityMultiplier = 0.25; // Increased from 0.15
             
-            this.camera.rotation.y += this.controls.rightStick.x * sensitivityMultiplier * this.settings.mobileSensitivityX * xMultiplier;
-            this.camera.rotation.x += this.controls.rightStick.y * sensitivityMultiplier * this.settings.mobileSensitivityY * yMultiplier;
-            this.camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.camera.rotation.x));
+            // Update target rotation for mobile
+            this.cameraSmoothing.targetRotationY += this.controls.rightStick.x * sensitivityMultiplier * this.settings.mobileSensitivityX * xMultiplier;
+            this.cameraSmoothing.targetRotationX += this.controls.rightStick.y * sensitivityMultiplier * this.settings.mobileSensitivityY * yMultiplier;
+            
+            // Clamp vertical rotation
+            this.cameraSmoothing.targetRotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.cameraSmoothing.targetRotationX));
+            
+            // Smooth interpolation for mobile
+            const mobileSmoothingFactor = 0.2; // Slightly more responsive on mobile
+            this.cameraSmoothing.currentRotationX += (this.cameraSmoothing.targetRotationX - this.cameraSmoothing.currentRotationX) * mobileSmoothingFactor;
+            this.cameraSmoothing.currentRotationY += (this.cameraSmoothing.targetRotationY - this.cameraSmoothing.currentRotationY) * mobileSmoothingFactor;
+            
+            // Apply smoothed rotation to camera
+            this.camera.rotation.x = this.cameraSmoothing.currentRotationX;
+            this.camera.rotation.y = this.cameraSmoothing.currentRotationY;
         }
-        // Gyroscope look (fixed Y-axis inversion)
+        
+        // Gyroscope look with smoothing
         if (this.isGyroEnabled && this.settings.gyroEnabled) {
-            const gyroSensitivity = this.settings.gyroSensitivity * 0.01;
+            const gyroSensitivity = this.settings.gyroSensitivity * 0.015; // Increased sensitivity
             const xMultiplier = this.settings.invertX ? -1 : 1;
-            const yMultiplier = this.settings.invertY ? -1 : 1; // Fixed Y-axis inversion
-            this.camera.rotation.y += this.gyroData.gamma * gyroSensitivity * xMultiplier;
-            this.camera.rotation.x += this.gyroData.beta * gyroSensitivity * yMultiplier;
-            this.camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.camera.rotation.x));
+            const yMultiplier = this.settings.invertY ? -1 : 1;
+            
+            // Update target rotation for gyro
+            this.cameraSmoothing.targetRotationY += this.gyroData.gamma * gyroSensitivity * xMultiplier;
+            this.cameraSmoothing.targetRotationX += this.gyroData.beta * gyroSensitivity * yMultiplier;
+            
+            // Clamp vertical rotation
+            this.cameraSmoothing.targetRotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.cameraSmoothing.targetRotationX));
+            
+            // Smooth interpolation for gyro
+            const gyroSmoothingFactor = 0.1; // Very smooth for gyro
+            this.cameraSmoothing.currentRotationX += (this.cameraSmoothing.targetRotationX - this.cameraSmoothing.currentRotationX) * gyroSmoothingFactor;
+            this.cameraSmoothing.currentRotationY += (this.cameraSmoothing.targetRotationY - this.cameraSmoothing.currentRotationY) * gyroSmoothingFactor;
+            
+            // Apply smoothed rotation to camera
+            this.camera.rotation.x = this.cameraSmoothing.currentRotationX;
+            this.camera.rotation.y = this.cameraSmoothing.currentRotationY;
         }
     }
 
