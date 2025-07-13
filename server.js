@@ -32,7 +32,30 @@ const gameState = {
     width: 1000,
     height: 1000,
     gravity: -9.8
-  }
+  },
+  // Solid objects for collision (boxes, buildings, bases)
+  solidObjects: [
+    // Bases
+    { type: 'base', team: 0, x: 0, y: 0, z: -200, w: 40, h: 15, d: 40 }, // Blue base
+    { type: 'base', team: 1, x: 0, y: 0, z: 200, w: 40, h: 15, d: 40 }, // Red base
+    // Buildings (from client createBuildings)
+    { type: 'building', x: -100, y: 0, z: -50, w: 20, h: 12, d: 20 },
+    { type: 'building', x: 100, y: 0, z: -50, w: 15, h: 10, d: 15 },
+    { type: 'building', x: -100, y: 0, z: 50, w: 18, h: 14, d: 18 },
+    { type: 'building', x: 100, y: 0, z: 50, w: 22, h: 16, d: 22 },
+    { type: 'building', x: 0, y: 0, z: 0, w: 25, h: 20, d: 25 },
+    { type: 'building', x: -150, y: 0, z: 0, w: 16, h: 12, d: 16 },
+    { type: 'building', x: 150, y: 0, z: 0, w: 16, h: 12, d: 16 },
+    // Example static boxes (obstacles) - match client logic (8 random, but here fixed for determinism)
+    { type: 'box', x: -120, y: 0, z: -120, w: 5, h: 5, d: 5 },
+    { type: 'box', x: 120, y: 0, z: -120, w: 5, h: 5, d: 5 },
+    { type: 'box', x: -120, y: 0, z: 120, w: 5, h: 5, d: 5 },
+    { type: 'box', x: 120, y: 0, z: 120, w: 5, h: 5, d: 5 },
+    { type: 'box', x: 0, y: 0, z: 120, w: 5, h: 5, d: 5 },
+    { type: 'box', x: 0, y: 0, z: -120, w: 5, h: 5, d: 5 },
+    { type: 'box', x: 120, y: 0, z: 0, w: 5, h: 5, d: 5 },
+    { type: 'box', x: -120, y: 0, z: 0, w: 5, h: 5, d: 5 }
+  ]
 };
 
 // Helper for random bot name
@@ -53,7 +76,126 @@ function randomBotPosition() {
 // Helper for random direction
 function randomDirection() {
   const angle = Math.random() * Math.PI * 2;
-  return { x: Math.cos(angle), y: 0, z: Math.sin(angle) };
+  return { x: Math.cos(angle), z: Math.sin(angle) };
+}
+
+// Collision detection functions
+function checkCollision(position, radius = 0.5) {
+  for (const obj of gameState.solidObjects) {
+    // Check if position is inside the solid object
+    const halfW = obj.w / 2;
+    const halfH = obj.h / 2;
+    const halfD = obj.d / 2;
+    
+    // Check if position is within the bounds of the object
+    if (position.x >= obj.x - halfW - radius && 
+        position.x <= obj.x + halfW + radius &&
+        position.y >= obj.y - radius && 
+        position.y <= obj.y + halfH + radius &&
+        position.z >= obj.z - halfD - radius && 
+        position.z <= obj.z + halfD + radius) {
+      return true; // Collision detected
+    }
+  }
+  return false; // No collision
+}
+
+function resolveCollision(oldPosition, newPosition, radius = 0.5) {
+  // Try to slide along walls instead of just blocking movement
+  let resolvedPosition = { ...newPosition };
+  
+  // Check X-axis movement first
+  const testX = { x: newPosition.x, y: oldPosition.y, z: oldPosition.z };
+  if (!checkCollision(testX, radius)) {
+    resolvedPosition.x = newPosition.x;
+  }
+  
+  // Check Z-axis movement
+  const testZ = { x: resolvedPosition.x, y: oldPosition.y, z: newPosition.z };
+  if (!checkCollision(testZ, radius)) {
+    resolvedPosition.z = newPosition.z;
+  }
+  
+  // If still colliding, try the other order (Z first, then X)
+  if (checkCollision(resolvedPosition, radius)) {
+    resolvedPosition = { ...oldPosition };
+    
+    // Try Z first
+    const testZ2 = { x: oldPosition.x, y: oldPosition.y, z: newPosition.z };
+    if (!checkCollision(testZ2, radius)) {
+      resolvedPosition.z = newPosition.z;
+    }
+    
+    // Then try X
+    const testX2 = { x: newPosition.x, y: oldPosition.y, z: resolvedPosition.z };
+    if (!checkCollision(testX2, radius)) {
+      resolvedPosition.x = newPosition.x;
+    }
+  }
+  
+  return resolvedPosition;
+}
+
+function findValidSpawnPosition(team) {
+  let attempts = 0;
+  const maxAttempts = 50;
+  
+  while (attempts < maxAttempts) {
+    let spawnPosition;
+    
+    if (team === 0) {
+      // Blue team spawns at blue base (north)
+      spawnPosition = { 
+        x: Math.random() * 60 - 30, 
+        y: 10, 
+        z: Math.random() * 60 - 30 - 200 
+      };
+    } else {
+      // Red team spawns at red base (south)
+      spawnPosition = { 
+        x: Math.random() * 60 - 30, 
+        y: 10, 
+        z: Math.random() * 60 - 30 + 200 
+      };
+    }
+    
+    // Check if spawn position is valid (not inside solid objects)
+    if (!checkCollision(spawnPosition, 1.0)) {
+      return spawnPosition;
+    }
+    
+    attempts++;
+  }
+  
+  // Fallback to safe position if no valid spawn found
+  if (team === 0) {
+    return { x: 0, y: 10, z: -220 }; // Just outside blue base
+  } else {
+    return { x: 0, y: 10, z: 220 }; // Just outside red base
+  }
+}
+
+function findValidBotSpawnPosition() {
+  let attempts = 0;
+  const maxAttempts = 100;
+  
+  while (attempts < maxAttempts) {
+    const spawnPosition = {
+      x: Math.random() * 400 - 200,
+      y: 1.8,
+      z: Math.random() * 400 - 200
+    };
+    
+    // Check if spawn position is valid (not inside solid objects)
+    if (!checkCollision(spawnPosition, 1.0)) {
+      return spawnPosition;
+    }
+    
+    attempts++;
+  }
+  
+  // Fallback to safe position if no valid spawn found
+  return { x: 0, y: 1.8, z: 0 };
 }
 
 // Store bot intervals for cleanup
@@ -61,6 +203,17 @@ const botIntervals = new Map();
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
+  // Store player name
+  let playerName = `Player${socket.id.slice(0, 4)}`;
+  
+  // Handle player name setting
+  socket.on('setPlayerName', (data) => {
+    if (data.name && data.name.trim().length > 0) {
+      playerName = data.name.trim().substring(0, 16); // Limit to 16 characters
+      console.log(`Player ${socket.id} set name to: ${playerName}`);
+    }
+  });
+
   // Player joins
   socket.on('playerJoin', (playerData) => {
     // Check if player is already in the game
@@ -98,25 +251,17 @@ io.on('connection', (socket) => {
     
     if (team === 0) {
       // Blue team spawns at blue base (north) - camera faces south towards enemy
-      spawnPosition = { 
-        x: Math.random() * 60 - 30, 
-        y: 10, 
-        z: Math.random() * 60 - 30 - 200 
-      };
+      spawnPosition = findValidSpawnPosition(0);
       initialRotation = { x: 0, y: Math.PI, z: 0 }; // Face south (towards red team)
     } else {
       // Red team spawns at red base (south) - camera faces north towards enemy
-      spawnPosition = { 
-        x: Math.random() * 60 - 30, 
-        y: 10, 
-        z: Math.random() * 60 - 30 + 200 
-      };
+      spawnPosition = findValidSpawnPosition(1);
       initialRotation = { x: 0, y: 0, z: 0 }; // Face north (towards blue team)
     }
     
     const player = {
       id: socket.id,
-      name: playerData.name || `Player${socket.id.slice(0, 4)}`,
+      name: playerName,
       position: spawnPosition,
       rotation: initialRotation,
       velocity: { x: 0, y: 0, z: 0 },
@@ -135,7 +280,7 @@ io.on('connection', (socket) => {
       const bot = {
         id: botId,
         name: randomBotName(),
-        position: randomBotPosition(),
+        position: findValidBotSpawnPosition(),
         rotation: { x: 0, y: 0, z: 0 },
         velocity: { x: 0, y: 0, z: 0 },
         health: 100,
@@ -163,10 +308,25 @@ io.on('connection', (socket) => {
         const newX = bot.position.x + bot._moveDir.x * 0.375; // 10% of previous speed (3.75 * 0.1)
         const newZ = bot.position.z + bot._moveDir.z * 0.375;
         
-        // Map boundary collision detection (500x500 map, boundaries at ±250)
-        const mapBoundary = 250;
-        bot.position.x = Math.max(-mapBoundary, Math.min(mapBoundary, newX));
-        bot.position.z = Math.max(-mapBoundary, Math.min(mapBoundary, newZ));
+        // Create new position object for collision check
+        const newPosition = { x: newX, y: bot.position.y, z: newZ };
+        
+        // Use collision resolution for smooth movement
+        const resolvedPosition = resolveCollision(bot.position, newPosition, 0.5);
+        
+        // Check if bot actually moved (to detect if stuck)
+        const moved = Math.abs(resolvedPosition.x - bot.position.x) > 0.01 || 
+                     Math.abs(resolvedPosition.z - bot.position.z) > 0.01;
+        
+        if (moved) {
+          // Map boundary collision detection (500x500 map, boundaries at ±250)
+          const mapBoundary = 250;
+          bot.position.x = Math.max(-mapBoundary, Math.min(mapBoundary, resolvedPosition.x));
+          bot.position.z = Math.max(-mapBoundary, Math.min(mapBoundary, resolvedPosition.z));
+        } else {
+          // Bot is stuck, pick a new random direction
+          bot._moveDir = randomDirection();
+        }
 
         // Aim at player
         const dx = player.position.x - bot.position.x;
@@ -245,6 +405,9 @@ io.on('connection', (socket) => {
       
       let newPosition = toVec3(movementData.position);
       
+      // Use collision resolution for smooth FPS-style movement
+      newPosition = resolveCollision(player.position, newPosition, 0.5);
+      
       // Server-side map boundary validation (500x500 map, boundaries at ±250)
       const mapBoundary = 250;
       newPosition.x = Math.max(-mapBoundary, Math.min(mapBoundary, newPosition.x));
@@ -309,25 +472,17 @@ io.on('connection', (socket) => {
         if (targetPlayer.isBot) {
           // Respawn bot after 2s
           setTimeout(() => {
-            targetPlayer.position = randomBotPosition();
+            targetPlayer.position = findValidBotSpawnPosition();
             targetPlayer.health = 100;
           }, 2000);
         } else {
         targetPlayer.health = 100;
           // Respawn at team base
           if (targetPlayer.team === 0) {
-            targetPlayer.position = { 
-              x: Math.random() * 60 - 30, 
-              y: 10, 
-              z: Math.random() * 60 - 30 - 200 
-            };
+            targetPlayer.position = findValidSpawnPosition(0);
             targetPlayer.rotation = { x: 0, y: Math.PI, z: 0 }; // Face south (towards red team)
           } else {
-            targetPlayer.position = { 
-              x: Math.random() * 60 - 30, 
-              y: 10, 
-              z: Math.random() * 60 - 30 + 200 
-            };
+            targetPlayer.position = findValidSpawnPosition(1);
             targetPlayer.rotation = { x: 0, y: 0, z: 0 }; // Face north (towards blue team)
           }
         shooter.score += 50; // Kill bonus
@@ -481,9 +636,23 @@ setInterval(() => {
   // Update projectile positions
   gameState.projectiles.forEach((projectile, id) => {
     // Increased velocity multiplier for faster bullet travel (adjusted for 30 FPS)
-    projectile.position.x += projectile.velocity.x * 0.033 * 3; // 300% faster, 30 FPS
-    projectile.position.y += projectile.velocity.y * 0.033 * 3;
-    projectile.position.z += projectile.velocity.z * 0.033 * 3;
+    const newX = projectile.position.x + projectile.velocity.x * 0.033 * 3; // 300% faster, 30 FPS
+    const newY = projectile.position.y + projectile.velocity.y * 0.033 * 3;
+    const newZ = projectile.position.z + projectile.velocity.z * 0.033 * 3;
+    
+    // Check collision with solid objects before moving bullet
+    const newPosition = { x: newX, y: newY, z: newZ };
+    if (checkCollision(newPosition, 0.1)) {
+      // Bullet hit a solid object, destroy it
+      gameState.projectiles.delete(id);
+      io.emit('projectileDestroyed', id);
+      return;
+    }
+    
+    // Update bullet position if no collision
+    projectile.position.x = newX;
+    projectile.position.y = newY;
+    projectile.position.z = newZ;
     
     // Check for collisions with players
     gameState.players.forEach((player, playerId) => {
@@ -494,7 +663,7 @@ setInterval(() => {
           Math.pow(projectile.position.z - player.position.z, 2)
         );
         
-        if (distance < 5) { // Increased hit detection radius from 2 to 5
+        if (distance < 7.5) { // Increased hit detection radius from 5 to 7.5 (1.5x bigger)
           gameState.projectiles.delete(id);
           io.emit('projectileDestroyed', id);
           
@@ -507,17 +676,9 @@ setInterval(() => {
             player.health = 100;
             // Respawn at team base
             if (player.team === 0) {
-              player.position = { 
-                x: Math.random() * 60 - 30, 
-                y: 10, 
-                z: Math.random() * 60 - 30 - 200 
-              };
+              player.position = findValidSpawnPosition(0);
             } else {
-              player.position = { 
-                x: Math.random() * 60 - 30, 
-                y: 10, 
-                z: Math.random() * 60 - 30 + 200 
-              };
+              player.position = findValidSpawnPosition(1);
             }
             if (shooter) shooter.score += 50;
           }

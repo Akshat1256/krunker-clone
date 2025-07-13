@@ -87,8 +87,8 @@ class KrunkerClone {
         // Physics system
         this.physics = {
             velocityY: 0,
-            gravity: 0.4,
-            jumpForce: 6.4
+            gravity: 0.15, // Reduced from 0.4 to 0.15 for moon-like gravity
+            jumpForce: 1.25 // Set to 1.25x movement speed (1.0 * 1.25 = 1.25)
         };
         
         // Game state management
@@ -151,6 +151,9 @@ class KrunkerClone {
             console.log('Showing main menu...');
             this.showMainMenu();
             console.log('Initialization complete');
+
+            // Always show name modal on page load/refresh
+            this.showNameModal();
         } catch (error) {
             console.error('Error during initialization:', error);
             alert('Failed to initialize game. Please refresh the page.');
@@ -226,6 +229,10 @@ class KrunkerClone {
         this.socket = io();
         
         this.socket.on('connect', () => {
+            // Send player name to server
+            if (this.playerName) {
+                this.socket.emit('setPlayerName', { name: this.playerName });
+            }
             console.log('Connected to server');
             this.startLatencyMeasurement();
         });
@@ -330,7 +337,7 @@ class KrunkerClone {
             setTimeout(() => {
                 console.log('Joining team deathmatch game...');
                 this.socket.emit('playerJoin', { 
-                    name: 'Player',
+                    name: this.playerName || 'Player',
                     gameMode: 'teamDeathmatch',
                     teamCode: this.teamData.teamCode,
                     isLeader: this.teamData.isLeader
@@ -471,8 +478,8 @@ class KrunkerClone {
     }
 
     setupMobileControls() {
-        // Show mobile controls for testing on desktop too
-        // if (!this.isMobile) return;
+        // Only show mobile controls on mobile devices
+        if (!this.isMobile) return;
 
         const leftStick = document.getElementById('leftStick');
         const rightStick = document.getElementById('rightStick');
@@ -547,7 +554,7 @@ class KrunkerClone {
             const deltaX = touch.clientX - centerX;
             const deltaY = touch.clientY - centerY;
             const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            const maxDistance = 40;
+            const maxDistance = 30; // Reduced from 40 to 30 for more responsive control
 
             let x, y;
             if (distance > maxDistance) {
@@ -559,8 +566,8 @@ class KrunkerClone {
                 y = deltaY / maxDistance;
             }
 
-            // Update visual indicator
-            stickIndicator.style.transform = `translate(calc(-50% + ${x * 20}px), calc(-50% + ${y * 20}px))`;
+            // Update visual indicator with smoother movement
+            stickIndicator.style.transform = `translate(calc(-50% + ${x * 25}px), calc(-50% + ${y * 25}px))`;
 
             // Invert Y axis for proper control
             callback(x, -y);
@@ -588,7 +595,7 @@ class KrunkerClone {
             const deltaX = e.clientX - centerX;
             const deltaY = e.clientY - centerY;
             const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            const maxDistance = 40;
+            const maxDistance = 30; // Reduced from 40 to 30 for more responsive control
 
             let x, y;
             if (distance > maxDistance) {
@@ -600,8 +607,8 @@ class KrunkerClone {
                 y = deltaY / maxDistance;
             }
 
-            // Update visual indicator
-            stickIndicator.style.transform = `translate(calc(-50% + ${x * 20}px), calc(-50% + ${y * 20}px))`;
+            // Update visual indicator with smoother movement
+            stickIndicator.style.transform = `translate(calc(-50% + ${x * 25}px), calc(-50% + ${y * 25}px))`;
 
             // Invert Y axis for proper control
             callback(x, -y);
@@ -1104,6 +1111,24 @@ class KrunkerClone {
         });
         
         console.log(`Player ${playerData.id} added successfully with AK47`);
+
+        // Add name label above player (only for non-bots)
+        if (playerData.id && playerData.name && !/^Bot/.test(playerData.name)) {
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'player-name-label';
+            nameDiv.innerText = playerData.name;
+            nameDiv.style.position = 'absolute';
+            nameDiv.style.color = '#ffeb3b';
+            nameDiv.style.fontWeight = 'bold';
+            nameDiv.style.fontSize = '16px';
+            nameDiv.style.textShadow = '2px 2px 8px #000, 0 0 8px #000';
+            nameDiv.style.pointerEvents = 'none';
+            nameDiv.style.zIndex = '2001';
+            nameDiv.style.textAlign = 'center';
+            nameDiv.style.whiteSpace = 'nowrap';
+            nameDiv.id = `playerNameLabel_${playerData.id}`;
+            document.body.appendChild(nameDiv);
+        }
     }
 
     updatePlayerPosition(data) {
@@ -1140,6 +1165,10 @@ class KrunkerClone {
             this.scene.remove(player.mesh);
             this.players.delete(playerId);
         }
+
+        // Remove name label
+        const label = document.getElementById(`playerNameLabel_${playerId}`);
+        if (label) label.remove();
     }
 
     addProjectile(projectileData) {
@@ -1499,6 +1528,10 @@ class KrunkerClone {
         document.getElementById('copyTeamCode').addEventListener('click', () => {
             this.copyTeamCode();
         });
+
+        document.getElementById('changeNameButton').addEventListener('click', () => {
+            this.showNameModal();
+        });
     }
 
     showMainMenu() {
@@ -1598,7 +1631,7 @@ class KrunkerClone {
             if (this.socket && this.socket.connected) {
                 // Connect to server and start game
                 this.socket.emit('playerJoin', { 
-                    name: 'Player',
+                    name: this.playerName || 'Player',
                     gameMode: 'deathmatch',
                     teamId: this.teamData.teamId 
                 });
@@ -1827,7 +1860,7 @@ class KrunkerClone {
     }
 
     updatePlayerMovement() {
-        const moveSpeed = 4.0; // Increased from 2.0 to 4.0 for faster movement
+        const moveSpeed = 1.0; // Reduced from 2.0 to 1.0 for much slower movement
         const velocity = new THREE.Vector3();
         // Get movement direction from keys (proper FPS camera-relative)
         let inputX = 0, inputZ = 0;
@@ -1836,24 +1869,29 @@ class KrunkerClone {
         if (this.keys['KeyA']) inputX -= 1; // Left
         if (this.keys['KeyD']) inputX += 1; // Right
 
-        // Normalize input
+        // Normalize input for consistent speed in all directions
         let inputLength = Math.hypot(inputX, inputZ);
         if (inputLength > 0) {
             inputX /= inputLength;
             inputZ /= inputLength;
         }
 
-        // Rotate input by camera yaw (Y axis)
+        // Rotate input by camera yaw (Y axis) for camera-relative movement
         const yaw = this.camera.rotation.y;
-        const moveX = inputX * Math.cos(yaw) - inputZ * Math.sin(yaw);
-        const moveZ = inputX * Math.sin(yaw) + inputZ * Math.cos(yaw);
-        velocity.x = moveX;
-        velocity.z = moveZ;
-
-        // Apply speed
-        if (velocity.length() > 0) {
-            velocity.normalize().multiplyScalar(moveSpeed);
-        }
+        
+        // Create a direction vector based on input
+        const direction = new THREE.Vector3(inputX, 0, inputZ);
+        
+        // Create a rotation matrix from camera yaw
+        const rotationMatrix = new THREE.Matrix4();
+        rotationMatrix.makeRotationY(yaw);
+        
+        // Apply rotation to direction vector
+        direction.applyMatrix4(rotationMatrix);
+        
+        // Apply movement to velocity
+        velocity.x = direction.x * moveSpeed;
+        velocity.z = direction.z * moveSpeed;
 
         // Jumping
         if (this.keys['Space']) {
@@ -1869,10 +1907,23 @@ class KrunkerClone {
             }
         }
 
-        // Mobile movement
+        // Mobile movement (camera-relative)
         if (this.isMobile) {
-            velocity.x += this.controls.leftStick.x * moveSpeed;
-            velocity.z -= this.controls.leftStick.y * moveSpeed;
+            const mobileInputX = this.controls.leftStick.x;
+            const mobileInputZ = -this.controls.leftStick.y;
+            
+            // Create a direction vector based on mobile input
+            const mobileDirection = new THREE.Vector3(mobileInputX, 0, mobileInputZ);
+            
+            // Create a rotation matrix from camera yaw
+            const rotationMatrix = new THREE.Matrix4();
+            rotationMatrix.makeRotationY(this.camera.rotation.y);
+            
+            // Apply rotation to direction vector
+            mobileDirection.applyMatrix4(rotationMatrix);
+            
+            velocity.x += mobileDirection.x * moveSpeed;
+            velocity.z += mobileDirection.z * moveSpeed;
         }
 
         // Apply gravity
@@ -1988,31 +2039,36 @@ class KrunkerClone {
         // PC: Direct mouse look, no smoothing, clamp pitch
         if (!this.isMobile) {
             const xMultiplier = this.settings.invertX ? 1 : -1;
-            const yMultiplier = this.settings.invertY ? -1 : 1;
+            const yMultiplier = this.settings.invertY ? 1 : -1; // Fixed Y-axis inversion
             this.camera.rotation.y += this.mouse.deltaX * xMultiplier;
             let targetX = this.camera.rotation.x + this.mouse.deltaY * yMultiplier;
             this.camera.rotation.x = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, targetX));
+            
+            // Reset mouse delta after applying it
+            this.mouse.deltaX = 0;
+            this.mouse.deltaY = 0;
         }
-        // Mobile look (unchanged)
+        // Mobile look (improved sensitivity and responsiveness)
         if (this.isMobile) {
             const xMultiplier = this.settings.invertX ? -1 : 1;
-            const yMultiplier = this.settings.invertY ? 1 : -1;
-            this.camera.rotation.y += this.controls.rightStick.x * 0.05 * this.settings.mobileSensitivityX * xMultiplier;
-            this.camera.rotation.x += this.controls.rightStick.y * 0.05 * this.settings.mobileSensitivityY * yMultiplier;
+            const yMultiplier = this.settings.invertY ? -1 : 1; // Fixed Y-axis inversion
+            
+            // Increased sensitivity multiplier from 0.05 to 0.15 for better responsiveness
+            const sensitivityMultiplier = 0.15;
+            
+            this.camera.rotation.y += this.controls.rightStick.x * sensitivityMultiplier * this.settings.mobileSensitivityX * xMultiplier;
+            this.camera.rotation.x += this.controls.rightStick.y * sensitivityMultiplier * this.settings.mobileSensitivityY * yMultiplier;
             this.camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.camera.rotation.x));
         }
-        // Gyroscope look (unchanged)
+        // Gyroscope look (fixed Y-axis inversion)
         if (this.isGyroEnabled && this.settings.gyroEnabled) {
             const gyroSensitivity = this.settings.gyroSensitivity * 0.01;
             const xMultiplier = this.settings.invertX ? -1 : 1;
-            const yMultiplier = this.settings.invertY ? 1 : -1;
+            const yMultiplier = this.settings.invertY ? -1 : 1; // Fixed Y-axis inversion
             this.camera.rotation.y += this.gyroData.gamma * gyroSensitivity * xMultiplier;
             this.camera.rotation.x += this.gyroData.beta * gyroSensitivity * yMultiplier;
             this.camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.camera.rotation.x));
         }
-        // Reset mouse delta
-        this.mouse.deltaX = 0;
-        this.mouse.deltaY = 0;
     }
 
     updateProjectiles() {
@@ -2088,6 +2144,21 @@ class KrunkerClone {
                 );
             }
         });
+
+        // Update name label position for each player
+        this.players.forEach((player, playerId) => {
+            if (player.mesh && document.getElementById(`playerNameLabel_${playerId}`)) {
+                const vector = player.mesh.position.clone();
+                vector.y += 3.5; // Height above head
+                vector.project(this.camera);
+                const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+                const label = document.getElementById(`playerNameLabel_${playerId}`);
+                label.style.left = `${x - label.offsetWidth / 2}px`;
+                label.style.top = `${y - 30}px`;
+                label.style.display = player.mesh.visible ? 'block' : 'none';
+            }
+        });
     }
 
     startTeamDeathmatch() {
@@ -2117,6 +2188,72 @@ class KrunkerClone {
         const loadingText = document.querySelector('#loadingScreen p');
         if (loadingText) {
             loadingText.textContent = 'Starting team deathmatch...';
+        }
+    }
+
+    showNameModal() {
+        const nameModal = document.getElementById('nameModal');
+        const nameInput = document.getElementById('playerNameInput');
+        const submitButton = document.getElementById('playerNameSubmit');
+        
+        // Check if there's a saved name
+        const savedName = localStorage.getItem('playerName');
+        if (savedName) {
+            nameInput.value = savedName;
+            this.playerName = savedName;
+            this.updatePlayerNameDisplay();
+        } else {
+            nameInput.value = '';
+        }
+        
+        nameModal.style.display = 'flex';
+        nameInput.focus();
+        nameInput.select(); // Select all text for easy editing
+        
+        // Handle Enter key
+        nameInput.onkeypress = (e) => {
+            if (e.key === 'Enter') {
+                this.submitPlayerName();
+            }
+        };
+        
+        // Handle submit button click
+        submitButton.onclick = () => {
+            this.submitPlayerName();
+        };
+    }
+    
+    submitPlayerName() {
+        const nameInput = document.getElementById('playerNameInput');
+        const input = nameInput.value.trim();
+        
+        if (input.length === 0) {
+            alert('Please enter a name!');
+            nameInput.focus();
+            return;
+        }
+        
+        if (input.length > 16) {
+            alert('Name must be 16 characters or less!');
+            nameInput.focus();
+            return;
+        }
+        
+        // Save name and hide modal
+        this.playerName = input;
+        localStorage.setItem('playerName', input);
+        document.getElementById('nameModal').style.display = 'none';
+        
+        // Update HUD to show player name
+        this.updatePlayerNameDisplay();
+        
+        console.log('Player name set to:', input);
+    }
+    
+    updatePlayerNameDisplay() {
+        const playerNameElement = document.getElementById('playerName');
+        if (playerNameElement && this.playerName) {
+            playerNameElement.innerHTML = `<span>${this.playerName}</span>`;
         }
     }
 }

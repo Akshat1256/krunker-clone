@@ -66,6 +66,15 @@
             font-weight: bold;
         }
 
+        .game-subheader {
+            color: #ffeb3b !important;
+            font-size: 28px !important;
+            font-weight: bold !important;
+            margin-bottom: 35px !important;
+            letter-spacing: 2px !important;
+            text-shadow: 2px 2px 8px #000, 0 0 8px #000;
+        }
+
         .menu-buttons {
             display: flex;
             flex-direction: column;
@@ -238,6 +247,16 @@
             color: #00ff00;
         }
 
+        #watermark {
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            pointer-events: none;
+        }
+
         #crosshair {
             top: 50%;
             left: 50%;
@@ -310,18 +329,18 @@
         /* Mobile Controls */
         #mobileControls {
             position: absolute;
-            bottom: 0;
+            bottom: 20px; /* Moved up from 0 to 20px above the edge */
             left: 0;
             width: 100%;
-            height: 150px;
+            height: 250px; /* Increased height from 180px to 250px to accommodate larger controls */
             display: none;
             z-index: 200;
         }
 
         .control-stick {
             position: absolute;
-            width: 80px;
-            height: 80px;
+            width: 175px; /* Increased from 100px to 175px (1.75x bigger) */
+            height: 175px; /* Increased from 100px to 175px (1.75x bigger) */
             background: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.5);
             border-radius: 50%;
@@ -334,35 +353,35 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 30px;
-            height: 30px;
+            width: 70px; /* Increased from 40px to 70px (1.75x bigger) */
+            height: 70px; /* Increased from 40px to 70px (1.75x bigger) */
             background: rgba(255, 255, 255, 0.8);
             border-radius: 50%;
         }
 
         #leftStick {
-            bottom: 20px;
-            left: 20px;
+            bottom: 40px; /* Moved up from 20px to 40px */
+            left: 30px; /* Moved right from 20px to 30px */
         }
 
         #rightStick {
-            bottom: 20px;
-            right: 20px;
+            bottom: 40px; /* Moved up from 20px to 40px */
+            right: 30px; /* Moved left from 20px to 30px */
         }
 
         #shootButton {
             position: absolute;
-            bottom: 20px;
-            right: 120px;
-            width: 60px;
-            height: 60px;
+            bottom: 40px; /* Moved up from 20px to 40px */
+            right: 140px; /* Adjusted position */
+            width: 140px; /* Increased from 80px to 140px (1.75x bigger) */
+            height: 140px; /* Increased from 80px to 140px (1.75x bigger) */
             background: rgba(255, 0, 0, 0.7);
             border: 2px solid rgba(255, 255, 255, 0.5);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 42px; /* Increased from 24px to 42px (1.75x bigger) */
             font-weight: bold;
             color: white;
             touch-action: none;
@@ -370,17 +389,17 @@
 
         #reloadButton {
             position: absolute;
-            bottom: 20px;
-            right: 200px;
-            width: 60px;
-            height: 60px;
+            bottom: 40px; /* Moved up from 20px to 40px */
+            right: 240px; /* Adjusted position */
+            width: 140px; /* Increased from 80px to 140px (1.75x bigger) */
+            height: 140px; /* Increased from 80px to 140px (1.75x bigger) */
             background: rgba(0, 255, 0, 0.7);
             border: 2px solid rgba(255, 255, 255, 0.5);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 35px; /* Increased from 20px to 35px (1.75x bigger) */
             font-weight: bold;
             color: white;
             touch-action: none;
@@ -524,6 +543,52 @@
             resize: both;
             overflow: hidden;
         }
+
+        #playerName {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 18px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            z-index: 9999;
+            pointer-events: none;
+            text-shadow: 2px 2px 8px #000, 0 0 8px #000;
+            text-align: right;
+        }
+
+        /* New styles for the dev button */
+        .hud-dev-button {
+            position: absolute;
+            top: 20px; /* Adjust as needed */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #ffeb3b;
+            padding: 8px 15px;
+            border-radius: 10px;
+            border: 1px solid #ffeb3b;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            pointer-events: none; /* Make it non-interactive */
+        }
+
+        .right-bottom-controls {
+            position: absolute;
+            bottom: 40px;
+            right: 30px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 32px;
+            z-index: 201;
+        }
     </style>
 </head>
 <body>
@@ -533,12 +598,14 @@
         <!-- Main Menu Screen -->
         <div id="mainMenu" class="screen">
             <div class="menu-container">
-                <h1 class="game-title">KRUNKER CLONE</h1>
+                <h1 class="game-title">Krunker Clone</h1>
+                <h2 class="game-subheader">By: Akshat</h2>
                 
                 <div class="menu-buttons">
                     <button id="playButton" class="menu-button">PLAY DEATHMATCH</button>
                     <button id="createTeamButton" class="menu-button">CREATE TEAM</button>
                     <button id="joinTeamButton" class="menu-button">JOIN TEAM</button>
+                    <button id="changeNameButton" class="menu-button">CHANGE NAME</button>
                     <button id="settingsMenuButton" class="menu-button">SETTINGS</button>
                 </div>
                 
@@ -576,6 +643,10 @@
 
         <!-- HUD -->
         <div id="hud">
+            <div id="devCredit" class="hud-element" style="top: 20px; left: 50%; transform: translateX(-50%); font-size: 18px; color: #ffeb3b; background: rgba(0,0,0,0.7); padding: 6px 18px; border-radius: 10px; font-weight: bold; letter-spacing: 1px; z-index: 9999; pointer-events: none; text-shadow: 2px 2px 8px #000, 0 0 8px #000; text-align: center;">Github: Akshat1256</div>
+            <div id="playerName" class="hud-element" style="right: 20px; top: 20px; text-align: right;">
+                <span></span>
+            </div>
             <div id="healthBar" class="hud-element hud-draggable">
                 <div id="healthFill"></div>
             </div>
@@ -599,6 +670,14 @@
                 <div>Latency: <span id="latency">0</span>ms</div>
             </div>
             
+            <!-- Remove watermark from HUD -->
+            <!-- <div id="watermark" class="hud-element">
+                <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7); text-align: right; line-height: 1.2;">
+                    <div>Developed by Akshat</div>
+                    <div>Github - Akshat1256</div>
+                </div>
+            </div> -->
+            
             <div id="settingsButton" class="hud-element hud-draggable">
                 ⚙️
             </div>
@@ -613,9 +692,11 @@
         <!-- Mobile Controls -->
         <div id="mobileControls">
             <div id="leftStick" class="control-stick"></div>
-            <div id="rightStick" class="control-stick"></div>
-            <div id="shootButton">FIRE</div>
-            <div id="reloadButton">RELOAD</div>
+            <div class="right-bottom-controls">
+                <div id="reloadButton">RELOAD</div>
+                <div id="shootButton">FIRE</div>
+                <div id="rightStick" class="control-stick"></div>
+            </div>
         </div>
 
         <!-- Settings Panel -->
@@ -720,6 +801,16 @@
                 <button class="button" id="saveSettings">Save Settings</button>
                 <button class="button" id="resetHUD">Reset HUD Layout</button>
                 <button class="button" id="closeSettings">Close</button>
+            </div>
+        </div>
+
+        <!-- Player Name Modal -->
+        <div id="nameModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;">
+            <div style="background: #222; padding: 40px 30px; border-radius: 16px; box-shadow: 0 8px 32px #000a; text-align: center; min-width: 320px;">
+                <h2 style="color: #fff; margin-bottom: 18px;">Enter Your Name</h2>
+                <input id="playerNameInput" type="text" maxlength="16" placeholder="Your name..." style="font-size: 20px; padding: 10px 16px; border-radius: 8px; border: none; outline: none; width: 80%; margin-bottom: 18px;" />
+                <br />
+                <button id="playerNameSubmit" style="font-size: 18px; padding: 10px 30px; border-radius: 8px; background: #667eea; color: #fff; border: none; cursor: pointer; font-weight: bold;">Start</button>
             </div>
         </div>
     </div>
